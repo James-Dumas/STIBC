@@ -1,0 +1,165 @@
+#!/usr/bin/env python
+
+import os, json, argparse 
+
+version = "1.0"
+
+parser = argparse.ArgumentParser(description="compiles TI-BASIC programs")
+parser.add_argument("target", choices=['compile', 'decompile'])
+parser.add_argument("inputfile", help="path to the input file")
+parser.add_argument("outputfile", help="path to the output file. existing files will be overwritten")
+args = parser.parse_args()
+
+inputfile = args.inputfile
+outputfile = args.outputfile
+
+tokenfile = open(os.path.dirname(os.path.realpath(__file__)) + "/stibc-tokens.json", "r")
+tokenDict = json.load(tokenfile)
+tokenfile.close()
+
+invTokenDict = {}
+for key in tokenDict["one-byte"].keys():
+	if key != "0x71":
+		invTokenDict[tokenDict["one-byte"][key]] = key
+
+dupeKeys = ("0xa7", "0xb0", "0xb1", "0xb2", "0xb3", "0xb4", "0xbe", "0xc0", "0xc2", "0xc3", "0xc4", "0xc5", "0xc6", "0xc7", "0xca", "0xd5")
+for key1 in tokenDict["two-byte"].keys():
+	for key2 in tokenDict["two-byte"][key1].keys():
+		if key1 == "0xbb" and key2 not in dupeKeys:
+			invTokenDict[tokenDict["two-byte"][key1][key2]] = key2
+
+def twoByteSize(num):
+	digits = len(hex(num)) - 2
+	if digits < 3:
+		return [hex(num), "0x0"]
+	elif digits == 3:
+		return ["0x" + hex(num)[-2:], "0x" + hex(num)[-3]]
+	elif digits > 3:
+		return ["0x" + hex(num)[-2:], "0x" + hex(num)[-4:-2]]
+
+if args.target == "compile":
+	#compile code
+	file = open(inputfile, "r")
+	code = file.readlines()
+	file.close()
+
+	name = code[0][7:-1]
+	comment = "Created by STIBC v%s" % version
+	archived = code[3][12:-1].lower() == "true"
+
+	tokenList = invTokenDict.keys()
+	tokenList.sort()
+	tokenList.sort(key=len, reverse=True)
+
+	outputStr = ""
+
+	lineNum = 4
+	for line in code[4:]:
+		currentLine = unicode(line)
+		lineNum += 1
+		while len(currentLine) > 0:
+			testString = currentLine
+			while testString not in tokenList:
+				testString = testString[:-1]
+				if len(testString) == 0: raise SyntaxError("Unregonized token on line %s:\n%s" % (lineNum, currentLine))
+				
+			outputStr += invTokenDict[testString] + " "
+			currentLine = currentLine[len(testString):]
+
+	output = str(outputStr).split(" ")[:-1]
+
+	#list of tokens which will cause a '-' to become a subtract sign instead of a negative sign
+	minusChars = (
+	")", "]", "}", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+	"theta;", "pi;", "i;", '"', "Ans")
+	minusTokens = []
+	for char in minusChars:
+		minusTokens.append(invTokenDict[char])
+
+	for i in range(len(output)):
+		if output[i] == "0xb0" and i > 0:
+			if output[i-1] in minusTokens and output[i-2] not in ("0x5c", "0x5e", "0x5d", "0x60", "0x62", "0x63", "0xaa", "0xbb", "0xef") or output[i-2] == "0x5c" or output[i-2] == "0x5d" or (output[i-2] == "0xbb" and output[i-1] == "0x31"):
+				output[i] = "0x71"
+
+	header = ["0x2a", "0x2a", "0x54", "0x49", "0x38", "0x33", "0x46", "0x2a", "0x1a", "0xa", "0x0"]
+	for i in range(42):
+		if i < len(comment):
+			header += [hex(ord(comment[i]))]
+		else:
+			header += ["0x0"]
+
+	header += twoByteSize(len(output) + 19) + ["0xd", "0x0"] + twoByteSize(len(output) + 2) + ["0x5"]
+	for i in range(8):
+		if i < len(name):
+			header += [hex(ord(name[i]))]
+		else:
+			header += ["0x0"]
+
+	header += ["0x0"]
+	if archived:
+		header += ["0x80"]
+	else:
+		header += ["0x0"]
+
+	header += twoByteSize(len(output) + 2) + twoByteSize(len(output))
+
+	sum = 0
+	for byte in header[-19:] + output:
+		sum += int(byte, 16)
+
+	checkSum = twoByteSize(sum)
+
+	fullOutput = header + output + checkSum
+
+	file = open(outputfile, "wb")
+	for byte in fullOutput:
+		file.write(chr(int(byte, 16)))
+
+	file.close()
+
+else:
+	#decompile code
+	file = open(inputfile, "rb")
+
+	code = []
+	for char in file.read():
+		code.append(hex(ord(char)))
+		
+	file.close()
+		
+	header = ""
+	name = ""
+	for i in range(8):
+		header += chr(int(code[i], 16))
+		if code[i+60] != "0x0":
+			name += chr(int(code[i+60], 16))
+
+	comment = ""
+	for i in range(11, 53):
+		if code[i] != "0x0":
+			comment += chr(int(code[i], 16))
+
+	if header != "**TI83F*" or code[59] != "0x5":
+		raise SyntaxError("Not a TI-Basic program")
+
+	file = open(outputfile, "w")
+
+	string = "#Name: %s\n" % name
+	string += "#Info: %s\n" % comment
+	string += "#Archived: %s\n\n" % str(code[69] == "0x80")
+
+	twoByte = ""
+	for i in range(74, len(code[:-2])):
+		byte = code[i]
+		if twoByte != "":
+			string += tokenDict["two-byte"][twoByte][byte]
+			twoByte = ""
+		elif byte in tokenDict["two-byte"]:
+			twoByte = byte
+		else:
+			string += tokenDict["one-byte"][byte]
+
+	file.write(string)
+	file.close()
