@@ -1,7 +1,7 @@
 ##8xp file format
 
 BYTES   DESCRIPTION 
-8       every program starts with the ascii text: **TI83F*. 
+8       every program starts with the ascii text: `**TI83F*`. 
         in hex this is 2A 2A 54 49 38 33 46 2A
 3       always contains 1A 0A 00 or 1A 0A 0A. 
         which one you get depends on what calculator model was used, 
