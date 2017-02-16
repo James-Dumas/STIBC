@@ -1,4 +1,4 @@
-##8xp file format
+#8xp file format
 
 BYTES|DESCRIPTION
 -------|-----------
@@ -23,5 +23,5 @@ n      |list of tokens in the program (actual code).
 Note: every two-byte integer is stored with the least significant byte first.
 e.g. if the two bytes were `0xAB` and `0xCD` in that order it would represent the integer `0xCDAB`.
 
-#Template:
+###Template:
 2A 2A 54 49 38 33 46 2A 1A 0A 00 (42 byte comment) (data size) 0D 00 (program data size) 05 (program name) 00 00 (program data size) (program token size) (actual code) (checksum)
