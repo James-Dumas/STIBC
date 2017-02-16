@@ -4,7 +4,7 @@ BYTES|DESCRIPTION
 -------|-----------
 8      |every program starts with the ascii text: `**TI83F*`. in hex this is 2A 2A 54 49 38 33 46 2A
 3      |always contains 1A 0A 00 or 1A 0A 0A. which one you get depends on what calculator model was used, but I'm not sure which models produce which or how this plays into compatibility between models.
-42     |comment, usually contains file creation info.
+42     |4s character comment. This can be anything, but it usually contains file creation info.
 2      |size of the entire data section in bytes.
        |**Start of Data Section**
 2      |always 0D 00.
