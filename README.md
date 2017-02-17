@@ -25,5 +25,7 @@ The first four lines of your script must contain the following:
 
 {Archived} is whether or not the program is archived, obviously
 
+Also, STIBC is not as picky about code formatting as the actualy TI-Connect editor.  Leading and trailing whitespace is ignored, and all tokens can be typed with a standard keyboard. for example, instead of having to copy-paste a greek pi every time you want to use it, you just type `pi;`. Open stibc-tokens.json in the src folder to look at and change how all of the tokens are typed.
+
 ##More Info
 Check format.md for info on the 8xp program file format.  Most of the info needed for this project came from http://merthsoft.com/ and http://tibasicdev.wikidot.com/ so check those out too, they're pretty cool sites.
