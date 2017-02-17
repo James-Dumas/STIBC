@@ -22,11 +22,11 @@ for key in tokenDict["one-byte"].keys():
 	if key != "0x71":
 		invTokenDict[tokenDict["one-byte"][key]] = key
 
-dupeKeys = ("0xa7", "0xb0", "0xb1", "0xb2", "0xb3", "0xb4", "0xbe", "0xc0", "0xc2", "0xc3", "0xc4", "0xc5", "0xc6", "0xc7", "0xca", "0xd5")
+dupeKeys = ("0xa7", "0xb0", "0xb1", "0xb2", "0xb3", "0xb4", "0xbe", "0xc0", "0xc2", "0xc3", "0xc4", "0xc5", "0xc6", "0xc7", "0xca", "0xd5", "0xde", "0xe0", "0xe1", "0xe2", "0xe3", "0xe4", "0xe5", "0xe6", "0xe7", "0xe8", "0xe9", "0xe10")
 for key1 in tokenDict["two-byte"].keys():
 	for key2 in tokenDict["two-byte"][key1].keys():
 		if key1 == "0xbb" and key2 not in dupeKeys:
-			invTokenDict[tokenDict["two-byte"][key1][key2]] = key2
+			invTokenDict[tokenDict["two-byte"][key1][key2]] = key1 + " " + key2
 
 def twoByteSize(num):
 	digits = len(hex(num)) - 2
@@ -43,6 +43,9 @@ if args.target == "compile":
 	code = file.readlines()
 	file.close()
 	
+	if code[0][0:7].lower() != "#name: " or code[1][0:7].lower().strip() != "#info:" or code[2][0:11].lower() != "#archived: " or code[3][:-1].strip() != "":
+		raise SyntaxError("Document not properly formatted for compilation\nCheck the README file for info on formatting")
+	
 	if len(code[0]) < 8:
 		name = ""
 	else:
@@ -51,12 +54,12 @@ if args.target == "compile":
 		if len(name) > 8 or char not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789":
 			raise SyntaxError("Invalid name '%s'\nCheck the README file for info on formatting" % name)
 	
-	if len(code[1) < 8:
+	if len(code[1]) < 8:
 		comment = ""
 	else:
 		comment = code[1][7:-1].strip()
 	if len(comment) > 42: raise SyntaxError("Invalid comment; must be <= 42 characters")
-	archived = code[2][12:-1].stip().lower() == "true"
+	archived = code[2][11:-1].strip().lower() == "true"
 
 	tokenList = invTokenDict.keys()
 	tokenList.sort()
@@ -72,29 +75,31 @@ if args.target == "compile":
 			testString = currentLine
 			while testString not in tokenList:
 				testString = testString[:-1]
-				if len(testString) == 0: raise SyntaxError("Unregonized token on line %s:\n%s" % (lineNum, currentLine))
+				if len(testString) == 0: raise SyntaxError("Unsupported character on line %s:\n%s" % (lineNum, currentLine))
 				
 			outputStr += invTokenDict[testString] + " "
 			currentLine = currentLine[len(testString):]
 
-	output = str(outputStr).split(" ")[:-1]
+	output = str(outputStr).split(" ")
+	while output[-1] == "0x3f" or output[-1] == "0x29" or output[-1] == "":
+		output = output[:-1]
 
-	#list of tokens which will cause a '-' to become a subtract sign instead of a negative sign
+	#list of tokens which will cause a '-' after it to become a subtract sign instead of a negative sign
 	minusChars = (
 	")", "]", "}", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
 	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
 	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-	"theta;", "pi;", "i;", '"', "Ans")
+	"theta;", "pi;", "i;", "e;", '"', "Ans")
 	minusTokens = []
 	for char in minusChars:
-		minusTokens.append(invTokenDict[char])
+		minusTokens += invTokenDict[char].split(" ")
 
 	for i in range(len(output)):
 		if output[i] == "0xb0" and i > 0:
-			if output[i-1] in minusTokens and output[i-2] not in ("0x5c", "0x5e", "0x5d", "0x60", "0x62", "0x63", "0xaa", "0xbb", "0xef") or output[i-2] == "0x5c" or output[i-2] == "0x5d" or (output[i-2] == "0xbb" and output[i-1] == "0x31"):
+			if (output[i-1] in minusTokens and output[i-2] not in tokenDict["two-byte"].keys()) or output[i-2] == "0x5c" or output[i-2] == "0x5d" or (output[i-2] == "0xbb" and output[i-1] == "0x31"):
 				output[i] = "0x71"
 
-	header = ["0x2a", "0x2a", "0x54", "0x49", "0x38", "0x33", "0x46", "0x2a", "0x1a", "0xa", "0xa"]
+	header = ["0x2a", "0x2a", "0x54", "0x49", "0x38", "0x33", "0x46", "0x2a", "0x1a", "0xa", "0x0"]
 	for i in range(42):
 		if i < len(comment):
 			header += [hex(ord(comment[i]))]
@@ -159,7 +164,7 @@ else:
 
 	string = "#Name: %s\n" % name
 	string += "#Info: %s\n" % comment
-	string += "#Archived: %s\n\n" % str(code[69] == "0x80")
+	string += "#Archived: %s\n\n" % str(code[69] == "0x80").lower()
 
 	twoByte = ""
 	for i in range(74, len(code[:-2])):
