@@ -14,16 +14,16 @@ to successfully compile a program the input file must be formatted in a certain 
 The first four lines of your script must contain the following:
 
 ```
-#Name: {program name}
-#Info: {comment}
-#Archived: {true | false}
+#name: {program name}
+#info: {comment}
+#archived: {true | false}
 {an empy line}
 ```
 {program name} is what the program will be named when viewed on the calculator
 
 {comment} is a comment containing 42 characters (check format.md for more about this)
 
-{Archived} is whether or not the program is archived, obviously
+archived {true | false} is whether or not the program is archived, obviously
 
 Also, STIBC is not as picky about code formatting as the actualy TI-Connect editor.  Leading and trailing whitespace is ignored, and all tokens can be typed with a standard english keyboard. for example, instead of having to copy-paste a greek pi every time you want to use it, you just type `pi;`. Open stibc-tokens.json in the src folder to look at and change how all of the tokens are written.
 
