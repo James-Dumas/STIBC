@@ -2,7 +2,7 @@
 
 import os, json, argparse 
 
-version = "1.0"
+version = "1.1"
 
 parser = argparse.ArgumentParser(description="compiles TI-BASIC programs")
 parser.add_argument("target", choices=['compile', 'decompile'])
@@ -59,7 +59,9 @@ if args.target == "compile":
 	else:
 		comment = code[1][7:-1].strip()
 	if len(comment) > 42: raise SyntaxError("Invalid comment; must be <= 42 characters")
+	elif len(comment) == 0: comment = "Created by STIBC v%s" % version
 	archived = code[2][11:-1].strip().lower() == "true"
+		
 
 	tokenList = invTokenDict.keys()
 	tokenList.sort()
