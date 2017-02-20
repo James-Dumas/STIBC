@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
 	name='Simple TI-BASIC Compiler',
-	version='1.0',
+	version='1.1',
 	description="TI-BASIC Compiler/Decompiler",
 	author='James Dumas',
 	url='https://github.com/James-Dumas/STIBC',
