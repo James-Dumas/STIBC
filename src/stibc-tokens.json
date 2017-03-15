@@ -378,8 +378,8 @@
             "0x1e": "ZnMax",
             "0x1f": "nMin",
             "0x20": "ZnMin",
-            "0x21": "Delta;Tbl"
-            "0x22": "Tstep"
+            "0x21": "Delta;Tbl",
+            "0x22": "Tstep",
             "0x23": "theta;step",
             "0x24": "ZTstep",
             "0x25": "Ztheta;step",
