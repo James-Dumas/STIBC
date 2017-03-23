@@ -2,7 +2,7 @@
 
 import os, json, argparse 
 
-version = "1.1"
+version = "1.2"
 
 parser = argparse.ArgumentParser(description="compiles TI-BASIC programs")
 parser.add_argument("target", choices=['compile', 'decompile'])
@@ -25,7 +25,11 @@ for key in tokenDict["one-byte"].keys():
 dupeKeys = ("0xa7", "0xb0", "0xb1", "0xb2", "0xb3", "0xb4", "0xbe", "0xc0", "0xc2", "0xc3", "0xc4", "0xc5", "0xc6", "0xc7", "0xca", "0xd5", "0xde", "0xe0", "0xe1", "0xe2", "0xe3", "0xe4", "0xe5", "0xe6", "0xe7", "0xe8", "0xe9", "0xe10")
 for key1 in tokenDict["two-byte"].keys():
 	for key2 in tokenDict["two-byte"][key1].keys():
-		if key1 == "0xbb" and key2 not in dupeKeys:
+		if key1 == "0xbb":
+			if key2 not in dupeKeys:
+				invTokenDict[tokenDict["two-byte"][key1][key2]] = key1 + " " + key2
+				
+		else:
 			invTokenDict[tokenDict["two-byte"][key1][key2]] = key1 + " " + key2
 
 def twoByteSize(num):
@@ -77,7 +81,7 @@ if args.target == "compile":
 			testString = currentLine
 			while testString not in tokenList:
 				testString = testString[:-1]
-				if len(testString) == 0: raise SyntaxError("Unsupported character on line %s:\n%s" % (lineNum, currentLine))
+				if len(testString) == 0: raise SyntaxError("Unsupported character on line %s: '%s'\n%s" % (lineNum, currentLine[0], line))
 				
 			outputStr += invTokenDict[testString] + " "
 			currentLine = currentLine[len(testString):]
