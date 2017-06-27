@@ -10,5 +10,6 @@ setup(
 	url='https://github.com/James-Dumas/STIBC',
 	license="GNU General Public License",
 	packages=['src',],
-	scripts=["src/stibc", "src/stibc-tokens.json"]
+	scripts=["src/stibc",],
+	data_files=[('share/stibc', ['src/tokens.json',],),]
 )
