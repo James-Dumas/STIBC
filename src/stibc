@@ -14,7 +14,7 @@ inputfile = args.inputfile
 outputfile = args.outputfile
 
 # open dict of tokens with 'token, string' pairs
-tokenfile = open(os.path.dirname(os.path.realpath(__file__)) + os.path.join(sys.prefix, "share/stibc/tokens.json"), "r")exit
+tokenfile = open(os.path.join(sys.prefix, "share/stibc/tokens.json"), "r")
 tokenDict = json.load(tokenfile)
 tokenfile.close()
 
@@ -111,8 +111,17 @@ if args.target == "compile":
 
     # change negative signs to subtract signs where appropriate
     for i in range(len(output)):
-        if output[i] == "0xb0" and i > 0:
-            if (output[i-1] in minusTokens and output[i-2] not in tokenDict["two-byte"].keys()) or output[i-2] == "0x5c" or output[i-2] == "0x5d" or output[i-2] == "0x5e" or output[i-2] == "0x62" or output[i-2] == "0xaa" or (output[i-2] == "0xbb" and output[i-1] == "0x31"):
+        if output[i] == "0xb0":
+            # if there are at least 3 in a row, convert all following negative signs into subtract signs until a different token is found
+            if i < len(output) - 2 and output[i+1] == "0xb0" and output[i+2] == "0xb0":
+                while output[i] == "0xb0" and i < len(output):
+                    output[i] = "0x71"
+                    i += 1
+
+                i -= 1
+
+            # otherwise check the previous character to determine whether or not to change it
+            elif i > 0 and (output[i-1] in minusTokens and i > 1 and output[i-2] not in tokenDict["two-byte"].keys()) or (i > 1 and (output[i-2] == "0x5c" or output[i-2] == "0x5d" or output[i-2] == "0x5e" or output[i-2] == "0x62" or output[i-2] == "0xaa" or (output[i-2] == "0xbb" and output[i-1] == "0x31"))):
                 output[i] = "0x71"
 
     # the standard header for TI-BASIC programs
@@ -168,10 +177,6 @@ else:   # decompilation
 
     file.close()
 
-    # make sure the input file is actually a TI-BASIC program
-    if header != "**TI83F*" or code[59] != "0x5":
-        raise Exception("Not a TI-BASIC program")
-
     header = ""
     name = ""
     # get header data and extract program name
@@ -179,6 +184,10 @@ else:   # decompilation
         header += chr(int(code[i], 16))
         if code[i+60] != "0x0":
             name += chr(int(code[i+60], 16))
+
+    # make sure the input file is actually a TI-BASIC program
+    if header != "**TI83F*" or code[59] != "0x5":
+        raise Exception("Not a TI-BASIC program")
 
     comment = ""
     # get comment string
